@@ -107,27 +107,28 @@ class PhoneFormatterValidation: Middleware {
   }
 }
 
-func <<(lhs: MiddlewareProtocol, rhs: MiddlewareProtocol) -> MiddlewareProtocol {
-  let res = (lhs.link(with: rhs))
-  return res
+precedencegroup ForwardOperator {
+  associativity: left
 }
 
-let start = Middleware()
-//((start
-//  << NilValidation())
-//  << CountValidation(length: 11))
-//  << PhoneFormatterValidation(format: "+X (XXX) XXX XX-XX")
+infix operator |>: ForwardOperator
 
-start
-  .link(with: NilValidation())
-  .link(with: CountValidation(length: 11))
-  .link(with: PhoneFormatterValidation(format: "+X (XXX) XXX XX-XX"))
+func |> (lhs: MiddlewareProtocol, rhs: MiddlewareProtocol) -> MiddlewareProtocol {
+  return lhs.link(with: rhs)
+}
 
+//let start = Middleware()
+let start = (Middleware()
+  |> NilValidation()
+  |> CountValidation(length: 11)
+  |> PhoneFormatterValidation(format: "+X (XXX) XXX XX-XX"))
 
-let r = start.check(value: .value("79634480209"))
+//start
+//  .link(with: NilValidation())
+//  .link(with: CountValidation(length: 11))
+//  .link(with: PhoneFormatterValidation(format: "+X (XXX) XXX XX-XX"))
 
-
-switch r {
+switch start.check(value: .value("79634480209")) {
 case .error(let error):
   print(error)
 case .value(let result):
